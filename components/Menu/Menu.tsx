@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#ccccff',
+        backgroundColor: '#abb5ed',
     },
 
     containerTitle: {
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 10,
         color: 'black',
+        width: '97%',
     },
 
     subHeader: {
@@ -67,17 +68,17 @@ const styles = StyleSheet.create({
     },
 
     button: {
-        backgroundColor: '#8080ff',
-        padding: 20,
+        backgroundColor: '#4f5f96',
+        padding: 40,
         borderRadius: 10,
         alignItems: 'center',
-        marginVertical: 10,
+        marginVertical: 40,
         flexDirection: 'column',
     },
 
     buttonImage: {
-        width: 110,
-        height: 110,
+        width: 150,
+        height: 140,
         marginRight: 10,
     },
 
