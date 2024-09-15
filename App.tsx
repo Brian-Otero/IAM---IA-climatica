@@ -7,10 +7,10 @@
 
 import React from 'react';
 import Menu from './components/Menu/Menu';
-
+import Mapa from './components/Mapa/Mapa'
 function App(): React.JSX.Element {
   return (
-    <Menu></Menu>
+    <Mapa></Mapa>
   );
 }
 
