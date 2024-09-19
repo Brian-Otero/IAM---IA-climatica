@@ -1,7 +1,22 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import Loading from '../Loading/Loading';
+
 
 const Menu: React.FC = () => {
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false)
+        }, 3000)
+        return () => clearTimeout(timer)
+    }, []);
+
+    if (isLoading) {
+        return <Loading/>
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.containerTitle}>

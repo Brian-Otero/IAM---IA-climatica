@@ -16,10 +16,13 @@ function App(): React.JSX.Element {
     /*Cambiar segun sea necesario 
     <Menu></Menu>
     */
-    <Mapa></Mapa>
+    // <Mapa></Mapa>
+    <Menu></Menu>
 
     //La navegacion esta pendiente
   );
 }
 
 export default App;
+
+
