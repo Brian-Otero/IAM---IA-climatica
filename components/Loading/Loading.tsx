@@ -6,7 +6,7 @@ const Loading: React.FC = () => {
         <View style={styles.container}>
             <Image
                 source={require('./assets/cloud-icon.png')}
-                style={styles.customIcon}
+                style={styles.cloudIcon}
             />
             
             <ActivityIndicator size="large" color="#4f5f96" />
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#abb5ed',
     },
-    customIcon: {
+    cloudIcon: {
         width: 100,  
         height: 100,
         marginBottom: 20,
