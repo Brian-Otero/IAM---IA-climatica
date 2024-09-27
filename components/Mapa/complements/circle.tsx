@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Animated } from 'react-native';
-import { styleRain } from './styles'; // Ajusta la ruta según sea necesario
+import { styleRain } from './styleCircle'; // Ajusta la ruta según sea necesario
 
 // Componente que simula un círculo en las coordenadas
 
