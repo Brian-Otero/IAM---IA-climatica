@@ -1,10 +1,25 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import Loading from '../Loading/Loading';
+
 
 const Menu: React.FC = () => {
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false)
+        }, 3000)
+        return () => clearTimeout(timer)
+    }, []);
+
+    if (isLoading) {
+        return <Loading/>
+    }
+
     return (
         <View style={styles.container}>
-            <View>
+            <View style={styles.containerTitle}>
                 <Text style={styles.header}>INSTITUTO DE ASTRONOMÍA Y METEOROLOGÍA</Text>
                 <Text style={styles.subHeader}>IA CLIMATICA</Text>
             </View>
@@ -26,6 +41,9 @@ const Menu: React.FC = () => {
                     <Text style={styles.buttonText}>CAMARA IA</Text>
                 </TouchableOpacity>
             </View>
+            <View>
+                <Text>Universidad de Guadalajara</Text>
+            </View>
         </View>
     );
 };
@@ -33,9 +51,14 @@ const Menu: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#ccccff', 
+        backgroundColor: '#abb5ed',
+    },
+
+    containerTitle: {
+        backgroundColor: '#e6e6ff',
+        width: '100%',
     },
 
     header: {
@@ -43,31 +66,35 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 10,
+        color: 'black',
+        width: '97%',
     },
 
     subHeader: {
         fontSize: 16,
         textAlign: 'center',
-        marginBottom: 40,
+        marginBottom: 30,
+        color: 'black',
     },
+
     buttonContainer: {
         width: '80%',
         justifyContent: 'space-around',
     },
 
     button: {
-        backgroundColor: '#8080ff',
-        padding: 20,
+        backgroundColor: '#4f5f96',
+        padding: 40,
         borderRadius: 10,
         alignItems: 'center',
-        marginVertical: 10,
-        flexDirection: 'column', 
+        marginVertical: 40,
+        flexDirection: 'column',
     },
 
     buttonImage: {
-        width: 110,
-        height: 110,
-        marginRight: 10, 
+        width: 150,
+        height: 140,
+        marginRight: 10,
     },
 
     buttonText: {
