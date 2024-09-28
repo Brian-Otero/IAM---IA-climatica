@@ -1,33 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Loading from '../Loading/Loading';
 
-
 const Menu: React.FC = () => {
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setIsLoading(false)
-        }, 3000)
-        return () => clearTimeout(timer)
+            setIsLoading(false);
+        }, 3000);
+        return () => clearTimeout(timer);
     }, []);
 
     if (isLoading) {
-        return <Loading/>
+        return <Loading />;
     }
 
     return (
         <View style={styles.container}>
             <View style={styles.containerTitle}>
-                <Text style={styles.header}>INSTITUTO DE ASTRONOMÍA Y METEOROLOGÍA</Text>
-                <Text style={styles.subHeader}>IA CLIMATICA</Text>
+                <Image source={require('./assets/IAM-logo-rojo.png')} style={styles.logo} />
+                <View style={styles.textContainer}>
+                    <Text style={styles.header}>INSTITUTO DE ASTRONOMÍA Y METEOROLOGÍA</Text>
+                    <Text style={styles.subHeader}>IA CLIMATICA</Text>
+                </View>
             </View>
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button}>
                     <Image
-                        source={require('./assets/map-icon.png')} // Ruta de la imagen local
+                        source={require('./assets/map-icon.png')}
                         style={styles.buttonImage}
                     />
                     <Text style={styles.buttonText}>MAPA</Text>
@@ -35,7 +37,7 @@ const Menu: React.FC = () => {
 
                 <TouchableOpacity style={styles.button}>
                     <Image
-                        source={require('./assets/camera-icon.png')} // Ruta de la imagen local
+                        source={require('./assets/camera-icon.png')}
                         style={styles.buttonImage}
                     />
                     <Text style={styles.buttonText}>CAMARA IA</Text>
@@ -57,23 +59,34 @@ const styles = StyleSheet.create({
     },
 
     containerTitle: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#e6e6ff',
         width: '100%',
+        paddingVertical: 10, 
+        paddingHorizontal: 50, 
+        marginBottom: 10, 
+    },
+
+    logo: {
+        width: 60,
+        height: 60,
+        resizeMode: 'contain',
+        marginRight: 5,
+    },
+
+    textContainer: {
+        flex: 1,
     },
 
     header: {
         fontSize: 18,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
         color: 'black',
-        width: '97%',
     },
 
     subHeader: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 30,
+        fontSize: 14, 
         color: 'black',
     },
 
