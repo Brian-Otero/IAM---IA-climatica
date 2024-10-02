@@ -4,11 +4,16 @@ import { createStackNavigator } from '@react-navigation/stack';
 import 'react-native-gesture-handler';
 import Menu from './components/Menu/Menu';
 import Mapa from './components/Mapa/Mapa';
+import CameraHome from './components/Camara/CameraHome';
+import Takepic from './components/Camara/Takepic';
+
 
 
 type RootStackParamList = {
   Menu: undefined;
   Mapa: undefined;
+  CameraHome: { photo: any } | undefined;
+  Takepic: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -19,6 +24,8 @@ function App(): React.JSX.Element {
       <Stack.Navigator initialRouteName="Menu" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Menu" component={Menu} />
         <Stack.Screen name="Mapa" component={Mapa} />
+        <Stack.Screen name="CameraHome" component={CameraHome} />
+        <Stack.Screen name="Takepic" component={Takepic} />
       </Stack.Navigator>
     </NavigationContainer>
   );
