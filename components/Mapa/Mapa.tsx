@@ -1,118 +1,114 @@
-import Mapbox from '@rnmapbox/maps';
-import { View } from 'react-native';
-import { styleRain } from './complements/styleCircle';
-import Circle from './complements/circle';
-import { floodStyle } from './complements/styleTriangle';
-import FloodZone from './complements/triangulo';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Alert, PermissionsAndroid, Platform } from 'react-native';
+import WebView from 'react-native-webview';
+import Geolocation from 'react-native-geolocation-service';
+import PushNotification from 'react-native-push-notification';
 
-// Configura tu token de acceso de Mapbox
-Mapbox.setAccessToken('pk.eyJ1IjoiZmVhdGhlcmVkc25ha2UiLCJhIjoiY20xMTVnNDdyMHBodTJub3JjZmdvbHcyMSJ9.jsOifa5cHHAD8JobUX2Wfg');
+// Definir la interfaz para el estado de ubicación
+interface Location {
+  latitude: number;
+  longitude: number;
+}
 
-// Coordenadas para las ubicaciones
-const locations = [
-  { id: 'circle-guadalajara', coordinates: [-103.3396, 20.6672] }, // Guadalajara
-  { id: 'circle-zapopan', coordinates: [-103.3848, 20.7236] },    // Zapopan
-  { id: 'circle-tlaquepaque', coordinates: [-103.3117, 20.6406] }, // Tlaquepaque
-];
-
-const floodLocations = [
-  { id: 'circle-tlajomulco', coordinates: [-103.4473, 20.4747] },  // Tlajomulco
-];
-
-// Componente que representa un ícono triangular
-const TriangleInLocation = () => {
-  return (
-    <View style={floodStyle.icon}>
-      <FloodZone />
-    </View>
-  );
-};
-
-// Componente que representa un círculo en una ubicación
-const CircleInLocation = () => {
-  return (
-    <View style={styleRain.circleContainer}>
-      <Circle />
-    </View>
-  );
-};
-
-// Componente principal de la aplicación
 const App = () => {
+  const [location, setLocation] = useState<Location | null>(null);
+  const webViewRef = useRef<WebView>(null);
+
+  // Solicitar permiso de ubicación en Android
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Permiso de Geolocalización',
+            message: 'La aplicación necesita acceso a tu ubicación.',
+            buttonNeutral: 'Preguntar luego',
+            buttonNegative: 'Cancelar',
+            buttonPositive: 'Aceptar',
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('Permiso de ubicación concedido');
+          getLocation(); // Obtener la ubicación tras conceder el permiso
+        } else {
+          console.log('Permiso de ubicación denegado');
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    } else {
+      getLocation(); // Obtener la ubicación automáticamente en iOS
+    }
+  };
+
+  // Función para obtener la ubicación actual
+  const getLocation = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ latitude, longitude });
+        console.log('Ubicación obtenida:', latitude, longitude);
+
+        // Inyectar la ubicación en la web directamente
+        if (webViewRef.current) {
+          webViewRef.current.injectJavaScript(`
+            if (window.updateUserLocation) {
+              window.updateUserLocation(${latitude}, ${longitude});
+            }
+          `);
+        }
+
+        // Verificar si está en una zona de inundación simulada
+        checkIfInFloodZone(latitude, longitude);
+      },
+      error => {
+        console.log('Error obteniendo la ubicación:', error.message);
+        Alert.alert('Error obteniendo ubicación', error.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
+
+  // Simulación de la verificación de si está en una zona de inundación
+  const checkIfInFloodZone = (lat: number, lng: number) => {
+    const isInFloodZone = Math.random() > 0.5; // Simulación de zona de inundación
+    if (isInFloodZone) {
+      sendNotification('¡Alerta!', 'Estás en una zona de inundación o lluvia.');
+    } else {
+      sendNotification('Todo bien', 'No estás en una zona peligrosa.');
+    }
+  };
+
+  // Función para enviar notificación al dispositivo
+  const sendNotification = (title: string, message: string) => {
+    PushNotification.localNotification({
+      title,
+      message,
+      playSound: true,
+      soundName: 'default',
+      importance: 'high',
+    });
+  };
+
+  // Solicitar permiso de ubicación cuando la app se inicia
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
   return (
-    <View style={styleRain.page}>
-      <Mapbox.MapView style={styleRain.map}>
-        {/* Cámara centrada en Guadalajara */}
-        <Mapbox.Camera
-          centerCoordinate={locations[0].coordinates}
-          zoomLevel={11}
-        />
-
-        {/* Círculo fijo alrededor de Guadalajara */}
-        <Mapbox.ShapeSource
-          id="fixed-circle"
-          shape={{
-            type: 'FeatureCollection',
-            features: [{
-              type: 'Feature',
-              geometry: {
-                type: 'Polygon',
-                coordinates: [
-                  createCircleCoordinates(locations[0].coordinates, 1.44), // Radio en grados (ajusta según sea necesario)
-                ],
-              },
-              properties: {},
-            }],
-          }}
-        >
-          <Mapbox.FillLayer
-            id="fixed-circle-layer"
-            style={{
-              fillColor: 'rgba(255, 0, 0, 0.0)', // Color rojo con opacidad
-              fillOutlineColor: 'rgba(255, 0, 0, 1)', // Borde rojo sólido
-              lineWidth: 5, // Ancho del borde (ajusta aquí)
-            }}
-          />
-        </Mapbox.ShapeSource>
-
-        {/* Añadir anotaciones de círculo en las ubicaciones */}
-        {locations.map(location => (
-          <Mapbox.PointAnnotation
-            key={location.id}
-            id={location.id}
-            coordinate={location.coordinates}
-          >
-            <CircleInLocation />
-          </Mapbox.PointAnnotation>
-        ))}
-
-        {/* Añadir anotaciones de triángulo en las zonas de inundación */}
-        {floodLocations.map(floodLocation => (
-          <Mapbox.PointAnnotation
-            key={floodLocation.id}
-            id={floodLocation.id}
-            coordinate={floodLocation.coordinates}
-          >
-            <TriangleInLocation />
-          </Mapbox.PointAnnotation>
-        ))}
-      </Mapbox.MapView>
+    <View style={{ flex: 1 }}>
+      <WebView
+        ref={webViewRef}
+        source={{ uri: 'http://192.168.100.5:5500/components/Mapa/mapa.html' }} // Reemplaza con tu URL local
+        onMessage={event => {
+          const data = JSON.parse(event.nativeEvent.data);
+          console.log('Mensaje recibido de la web:', data);
+        }}
+        style={{ flex: 1 }}
+      />
     </View>
   );
-};
-
-// Función para crear coordenadas de un círculo
-const createCircleCoordinates = (center: number[], radius: number) => {
-  const coordinates = [];
-  const points = 30; // Número de puntos en el círculo
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI; // Convertir a radianes
-    const dx = radius * Math.cos(angle); // Cambia el radio según tus necesidades
-    const dy = radius * Math.sin(angle);
-    coordinates.push([center[0] + dx, center[1] + dy]); // Ajustar la longitud y latitud
-  }
-  coordinates.push(coordinates[0]); // Cerrar el círculo
-  return coordinates;
 };
 
 export default App;

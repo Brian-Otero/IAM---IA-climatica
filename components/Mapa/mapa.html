@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=no">
+    <title>Mapa con OpenStreetMap, KML y KMZ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        #toggle-kml {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 5px;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+        #toggle-kml-lluvias {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 5px;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <button id="toggle-kml">Mostrar/Ocultar KML Inundaciones</button>
+    <button id="toggle-kml-lluvias">Mostrar/Ocultar KML Lluvias</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        var map = L.map('map').setView([20.675556, -103.385833], 8);
+
+        // Cargar los tiles de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var kmlLayerInundaciones; // Variable para almacenar la capa KML de inundaciones
+        var kmlLayerLluvias; // Variable para almacenar la capa KML de lluvias
+        var kmzLayer; // Variable para almacenar la capa KMZ (imagen)
+        var polygons = []; // Lista de polígonos de zonas de inundación (desde KML)
+        var rainPolygons = []; // Lista de polígonos de zonas de lluvia (desde KML)
+        var userMarker; // Marcador del usuario
+        var rainMarkers = []; // Lista de marcadores de íconos de lluvia
+        var minIconSize = 50;  // Tamaño mínimo del ícono de lluvia
+        var maxIconSize = 100;  // Tamaño máximo del ícono de lluvia
+
+        // Función para ajustar el tamaño del ícono basado en el nivel de zoom
+        function resizeRainIcons() {
+            var currentZoom = map.getZoom();
+            var iconSize = Math.max(minIconSize, Math.min(maxIconSize, currentZoom * 10));
+
+            rainMarkers.forEach(function(marker) {
+                var icon = marker.options.icon;
+                icon.options.iconSize = [iconSize, iconSize];
+                icon.options.iconAnchor = [iconSize / 2, iconSize / 2];
+                marker.setIcon(icon);
+            });
+        }
+
+        // Función para cargar el archivo KML de inundaciones
+        function loadKMLInundaciones(kmlUrl) {
+            kmlLayerInundaciones = omnivore.kml(kmlUrl)
+                .on('ready', function() {
+                    map.fitBounds(kmlLayerInundaciones.getBounds());
+
+                    // Recorrer cada capa (polígono) en el KML y agregarla a la lista
+                    kmlLayerInundaciones.eachLayer(function(layer) {
+                        if (layer instanceof L.Polygon) {
+                            polygons.push(layer);
+                        }
+                    });
+                })
+                .addTo(map);
+        }
+
+        // Función para cargar el archivo KML de lluvias
+        function loadKMLLluvias(kmlUrl) {
+            kmlLayerLluvias = omnivore.kml(kmlUrl)
+                .on('ready', function() {
+                    map.fitBounds(kmlLayerLluvias.getBounds());
+
+                    // Recorrer cada capa (polígono) en el KML y agregarla a la lista
+                    kmlLayerLluvias.eachLayer(function(layer) {
+                        if (layer instanceof L.Polygon) {
+                            rainPolygons.push(layer);
+                            var rainIntensity = layer.feature.properties.intensity || "ligera"; // Verificar intensidad de la lluvia
+                            var bounds = layer.getBounds();
+                            var center = bounds.getCenter();
+                            addRainIcon(center, rainIntensity);
+                        }
+                    });
+                    resizeRainIcons(); // Ajustar el tamaño de los íconos basados en el zoom inicial
+                })
+                .addTo(map);
+        }
+
+        // Función para agregar un ícono de lluvia en una coordenada dependiendo de la intensidad
+        function addRainIcon(coord, intensity) {
+            var iconUrl;
+            
+            // Seleccionar el ícono basado en la intensidad
+            if (intensity.toLowerCase() === "ligera") {
+                iconUrl = 'rainy.gif';  // GIF de lluvia ligera
+            } else {
+                iconUrl = 'lluvias.gif';  // GIF para lluvias más fuertes
+            }
+
+            var rainIcon = L.icon({
+                iconUrl: iconUrl,
+                iconSize: [maxIconSize, maxIconSize], // Tamaño del ícono
+                iconAnchor: [maxIconSize / 2, maxIconSize / 2] // Centrar el ícono
+            });
+
+            var marker = L.marker(coord, {icon: rainIcon}).addTo(map);
+            rainMarkers.push(marker); // Almacenar el marcador para futuras referencias
+        }
+
+        // Función para cargar el archivo KMZ y extraer la imagen automáticamente
+        function loadKMZ(kmzUrl) {
+            fetch(kmzUrl)
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    JSZip.loadAsync(data).then(function (zip) {
+                        var kmlFile = zip.file(/\.kml$/i);
+                        if (!kmlFile || kmlFile.length === 0) {
+                            console.error("No se encontró ningún archivo KML en el KMZ.");
+                            return;
+                        }
+
+                        kmlFile[0].async("string").then(function (kmlText) {
+                            var parser = new DOMParser();
+                            var kmlDoc = parser.parseFromString(kmlText, "application/xml");
+                            var groundOverlay = kmlDoc.querySelector('GroundOverlay');
+
+                            if (!groundOverlay) {
+                                console.error("No se encontró ningún GroundOverlay en el archivo KML.");
+                                return;
+                            }
+
+                            var north = parseFloat(groundOverlay.querySelector('north').textContent);
+                            var south = parseFloat(groundOverlay.querySelector('south').textContent);
+                            var east = parseFloat(groundOverlay.querySelector('east').textContent);
+                            var west = parseFloat(groundOverlay.querySelector('west').textContent);
+                            var imagePath = groundOverlay.querySelector('Icon href').textContent;
+
+                            var imageFile = zip.file(imagePath);
+                            if (!imageFile) {
+                                console.error("No se encontró la imagen especificada en el archivo KML.");
+                                return;
+                            }
+
+                            imageFile.async("blob").then(function (blob) {
+                                var imageUrl = URL.createObjectURL(blob);
+                                var imageBounds = [[south, west], [north, east]];
+
+                                kmzLayer = L.imageOverlay(imageUrl, imageBounds).addTo(map);
+                                console.log("Imagen superpuesta correctamente.");
+                            }).catch(error => {
+                                console.error("Error al procesar la imagen del KMZ: ", error);
+                            });
+                        }).catch(error => {
+                            console.error("Error al procesar el archivo KML: ", error);
+                        });
+                    }).catch(error => {
+                        console.error("Error al descomprimir el archivo KMZ: ", error);
+                    });
+                }).catch(error => {
+                    console.error("Error al descargar el archivo KMZ: ", error);
+                });
+        }
+
+        // Función para mostrar/ocultar el archivo KML de inundaciones
+        var kmlInundacionesVisible = true; // Estado de visibilidad del KML de inundaciones
+
+        document.getElementById('toggle-kml').addEventListener('click', function() {
+            if (kmlLayerInundaciones) {
+                if (kmlInundacionesVisible) {
+                    map.removeLayer(kmlLayerInundaciones);
+                    kmlInundacionesVisible = false;
+                    this.textContent = "Mostrar KML Inundaciones";
+                } else {
+                    kmlLayerInundaciones.addTo(map);
+                    kmlInundacionesVisible = true;
+                    this.textContent = "Ocultar KML Inundaciones";
+                }
+            }
+        });
+
+        // Función para mostrar/ocultar el archivo KML de lluvias
+        var kmlLluviasVisible = true; // Estado de visibilidad del KML de lluvias
+
+        document.getElementById('toggle-kml-lluvias').addEventListener('click', function() {
+            if (kmlLayerLluvias) {
+                if (kmlLluviasVisible) {
+                    map.removeLayer(kmlLayerLluvias);
+                    kmlLluviasVisible = false;
+                    this.textContent = "Mostrar KML Lluvias";
+                } else {
+                    kmlLayerLluvias.addTo(map);
+                    kmlLluviasVisible = true;
+                    this.textContent = "Ocultar KML Lluvias";
+                }
+            }
+        });
+
+        // Función para mover el marcador a la ubicación seleccionada o arrastrada
+        function moveUserMarker(lat, lng) {
+            if (!userMarker) {
+                userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
+                    .bindPopup("Tu ubicación actual").openPopup();
+
+                // Verificar si está en una zona de inundación o lluvia cuando se mueve el marcador
+                userMarker.on('dragend', function(e) {
+                    var newLatLng = userMarker.getLatLng();
+                    checkIfInZone(newLatLng.lat, newLatLng.lng);
+                });
+            } else {
+                userMarker.setLatLng([lat, lng]);
+                userMarker.openPopup();
+            }
+
+            // Verificar si está en una zona de inundación o lluvia al mover
+            checkIfInZone(lat, lng);
+        }
+
+        // Función para verificar si el usuario está dentro de la zona de inundación o lluvia
+        function checkIfInZone(lat, lng) {
+            var point = L.latLng(lat, lng);
+            var inFloodZone = false;
+            var inRainZone = false;
+
+            // Verificar zonas de inundación
+            for (var i = 0; i < polygons.length; i++) {
+                var polygon = polygons[i];
+                if (polygon.getBounds().contains(point)) {
+                    inFloodZone = true;
+                    break;
+                }
+            }
+
+            // Verificar zonas de lluvia
+            for (var j = 0; j < rainPolygons.length; j++) {
+                var rainPolygon = rainPolygons[j];
+                if (rainPolygon.getBounds().contains(point)) {
+                    inRainZone = true;
+                    break;
+                }
+            }
+
+            // Mensajes de alerta
+            if (inFloodZone && inRainZone) {
+                alert("¡Estás en una zona de inundación y está lloviendo!");
+            } else if (inFloodZone) {
+                alert("¡Estás en una zona de inundación!");
+            } else if (inRainZone) {
+                alert("¡Está lloviendo en tu ubicación!");
+            } else {
+                alert("No estás en una zona de inundación ni está lloviendo.");
+            }
+        }
+
+        // Esta función es llamada desde la app para actualizar la ubicación del usuario
+        window.updateUserLocation = function(lat, lng) {
+            moveUserMarker(lat, lng);
+            map.setView([lat, lng], 13); // Ajustar el mapa para centrar en la ubicación del usuario
+        }
+
+        // Ajustar el tamaño de los íconos cuando se cambie el nivel de zoom
+        map.on('zoomend', function() {
+            resizeRainIcons();
+        });
+
+        // Cargar el archivo KMZ y KML de inundaciones y lluvias directamente
+        loadKMLInundaciones('inundaciones.kml');  // Cambiar por la ruta real del archivo KML de inundaciones
+        loadKMLLluvias('lluvias_areas.kml');  // Cambiar por la ruta real del archivo KML de lluvias
+        loadKMZ('archivo.kmz');  // Cambiar por la ruta real del archivo KMZ
+    </script>
+</body>
+</html>
+
