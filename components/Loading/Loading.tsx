@@ -5,7 +5,7 @@ const Loading: React.FC = () => {
     return (
         <View style={styles.container}>
             <Image
-                source={require('./assets/cloud-icon.png')}
+                source={require('./assets/logo_iam_m20_oarp.png')}
                 style={styles.cloudIcon}
             />
             
@@ -22,8 +22,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#abb5ed',
     },
     cloudIcon: {
-        width: 100,  
-        height: 100,
+        width: 300,  
+        height: 300,
         marginBottom: 20,
     },
 })

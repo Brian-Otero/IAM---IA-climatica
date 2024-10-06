@@ -4,114 +4,128 @@ import Loading from '../Loading/Loading';
 import { StackScreenProps } from '@react-navigation/stack';
 
 type RootStackParamList = {
-  Menu: undefined;
-  Mapa: undefined;
+    Menu: undefined;
+    Mapa: undefined;
 };
 
 type Props = StackScreenProps<RootStackParamList, 'Menu'>;
 
 const Menu: React.FC<Props> = ({ navigation }) => {
-  const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, []);
 
-  if (isLoading) {
-    return <Loading />;
-  }
+    if (isLoading) {
+        return <Loading />;
+    }
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.containerTitle}>
-        <Text style={styles.header}>INSTITUTO DE ASTRONOMÍA Y METEOROLOGÍA</Text>
-        <Text style={styles.subHeader}>IA CLIMÁTICA</Text>
-      </View>
+    return (
+        <View style={styles.container}>
+            <View style={styles.containerTitle}>
+                <Image source={require('./assets/IAM-logo-rojo.png')} style={styles.logo} />
+                <View>
+                    <Text style={styles.header}>INSTITUTO DE ASTRONOMÍA Y METEOROLOGÍA</Text>
+                    <Text style={styles.subHeader}>IA CLIMÁTICA</Text>
+                </View>
+            </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Mapa')}
-        >
-          <Image
-            source={require('./assets/map-icon.png')}
-            style={styles.buttonImage}
-          />
-          <Text style={styles.buttonText}>MAPA</Text>
-        </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => navigation.navigate('Mapa')}
+                >
+                    <Image
+                        source={require('./assets/map-icon.png')}
+                        style={styles.buttonImage}
+                    />
+                    <Text style={styles.buttonText}>MAPA</Text>
+                </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={require('./assets/camera-icon.png')}
-            style={styles.buttonImage}
-          />
-          <Text style={styles.buttonText}>CÁMARA IA</Text>
-        </TouchableOpacity>
-      </View>
-      <View>
-        <Text>Universidad de Guadalajara</Text>
-      </View>
-    </View>
-  );
+                <TouchableOpacity style={styles.button}>
+                    <Image
+                        source={require('./assets/camera-icon.png')}
+                        style={styles.buttonImage}
+                    />
+                    <Text style={styles.buttonText}>CÁMARA IA</Text>
+                </TouchableOpacity>
+            </View>
+            <View>
+                <Text>Universidad de Guadalajara</Text>
+            </View>
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#abb5ed',
-  },
+    container: {
+        flex: 1,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#abb5ed',
+    },
 
-  containerTitle: {
-    backgroundColor: '#e6e6ff',
-    width: '100%',
-  },
+    containerTitle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#e6e6ff',
+        width: '100%',
+        paddingVertical: 10,
+        paddingHorizontal: 50,
+        marginBottom: 10,
+    },
 
-  header: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-    color: 'black',
-    width: '97%',
-  },
+    logo: {
+        width: 90,
+        height: 90,
+        resizeMode: 'contain',
+        marginRight: 5,
+    },
 
-  subHeader: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    color: 'black',
-  },
+    textContainer: {
+        flex: 1,
+    },
 
-  buttonContainer: {
-    width: '80%',
-    justifyContent: 'space-around',
-  },
+    header: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'black',
+    },
 
-  button: {
-    backgroundColor: '#4f5f96',
-    padding: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginVertical: 40,
-    flexDirection: 'column',
-  },
+    subHeader: {
+        fontSize: 14,
+        color: 'black',
+    },
 
-  buttonImage: {
-    width: 150,
-    height: 140,
-    marginRight: 10,
-  },
+    buttonContainer: {
+        width: '80%',
+        justifyContent: 'space-around',
+    },
 
-  buttonText: {
-    fontSize: 18,
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
+    button: {
+        backgroundColor: '#4f5f96',
+        padding: 40,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginVertical: 40,
+        flexDirection: 'column',
+    },
+
+    buttonImage: {
+        width: 150,
+        height: 140,
+        marginRight: 10,
+    },
+
+    buttonText: {
+        fontSize: 18,
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
 });
 
 export default Menu;
