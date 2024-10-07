@@ -4,15 +4,15 @@ import { createStackNavigator } from '@react-navigation/stack';
 import 'react-native-gesture-handler';
 import Menu from './components/Menu/Menu';
 import Mapa from './components/Mapa/Mapa';
-import CameraHome from './components/Camara/CameraHome';
 import Takepic from './components/Camara/Takepic';
+import CameraHome from './components/Camara/CameraHome';
 
 
 
 type RootStackParamList = {
   Menu: undefined;
   Mapa: undefined;
-  CameraHome: { photo: any } | undefined;
+  CameraHome: undefined;
   Takepic: undefined;
 };
 

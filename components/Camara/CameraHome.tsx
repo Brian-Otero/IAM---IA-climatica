@@ -6,7 +6,7 @@ import { ImagePickerResponse } from 'react-native-image-picker';
 
 type RootStackParamList = {
   Takepic: undefined;
-  CameraHome: { photo: ImagePickerResponse };
+  CameraHome: { photo: ImagePickerResponse } | undefined;
 };
 
 type Props = {

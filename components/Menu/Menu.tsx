@@ -47,7 +47,7 @@ const Menu: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => navigation.navigate('CameraHome')}>
+          onPress={() => navigation.navigate('Takepic')}>
           <Image
             source={require('./assets/camera-icon.png')}
             style={styles.buttonImage}

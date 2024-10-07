@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Button, Text, StyleSheet } from 'react-native';
+import { View, Button, Text, StyleSheet, Alert } from 'react-native';
 import { launchCamera, ImagePickerResponse } from 'react-native-image-picker';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -24,6 +24,9 @@ function Takepic({ navigation }: Props) {
       (response) => {
         if (response && !response.didCancel && response.assets) {
           navigation.navigate('CameraHome', { photo: response });
+        }
+        else{
+          Alert.alert("No se pudo abrir la camara");
         }
       }
     );
