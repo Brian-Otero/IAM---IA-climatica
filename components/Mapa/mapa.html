@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=no">
+    <meta name="viewport" content="width=device-width, initial-scale=no">
     <title>Mapa con OpenStreetMap, KML y KMZ</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
@@ -35,6 +35,12 @@
             border: 2px solid #ccc;
             cursor: pointer;
         }
+
+        /* Escalado para simular un mayor zoom */
+        .leaflet-zoom-animated {
+            transform: scale(1.5); /* Aquí puedes ajustar el factor de escala */
+            transform-origin: center;
+        }
     </style>
 </head>
 <body>
@@ -46,7 +52,7 @@
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
-        var map = L.map('map').setView([20.675556, -103.385833], 8);
+        var map = L.map('map').setView([20.675556, -103.385833], 20); // Zoom al nivel máximo 20
 
         // Cargar los tiles de OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -60,8 +66,8 @@
         var rainPolygons = []; // Lista de polígonos de zonas de lluvia (desde KML)
         var userMarker; // Marcador del usuario
         var rainMarkers = []; // Lista de marcadores de íconos de lluvia
-        var minIconSize = 50;  // Tamaño mínimo del ícono de lluvia
-        var maxIconSize = 100;  // Tamaño máximo del ícono de lluvia
+        var minIconSize = 450;  // Tamaño mínimo del ícono de lluvia
+        var maxIconSize = 500;  // Tamaño máximo del ícono de lluvia
 
         // Función para ajustar el tamaño del ícono basado en el nivel de zoom
         function resizeRainIcons() {
@@ -88,8 +94,7 @@
                             polygons.push(layer);
                         }
                     });
-                })
-                .addTo(map);
+                });
         }
 
         // Función para cargar el archivo KML de lluvias
@@ -109,8 +114,7 @@
                         }
                     });
                     resizeRainIcons(); // Ajustar el tamaño de los íconos basados en el zoom inicial
-                })
-                .addTo(map);
+                });
         }
 
         // Función para agregar un ícono de lluvia en una coordenada dependiendo de la intensidad
@@ -189,7 +193,7 @@
         }
 
         // Función para mostrar/ocultar el archivo KML de inundaciones
-        var kmlInundacionesVisible = true; // Estado de visibilidad del KML de inundaciones
+        var kmlInundacionesVisible = false; // Estado de visibilidad del KML de inundaciones (ahora oculto por defecto)
 
         document.getElementById('toggle-kml').addEventListener('click', function() {
             if (kmlLayerInundaciones) {
@@ -206,7 +210,7 @@
         });
 
         // Función para mostrar/ocultar el archivo KML de lluvias
-        var kmlLluviasVisible = true; // Estado de visibilidad del KML de lluvias
+        var kmlLluviasVisible = false; // Estado de visibilidad del KML de lluvias (ahora oculto por defecto)
 
         document.getElementById('toggle-kml-lluvias').addEventListener('click', function() {
             if (kmlLayerLluvias) {
@@ -281,7 +285,7 @@
         // Esta función es llamada desde la app para actualizar la ubicación del usuario
         window.updateUserLocation = function(lat, lng) {
             moveUserMarker(lat, lng);
-            map.setView([lat, lng], 13); // Ajustar el mapa para centrar en la ubicación del usuario
+            map.setView([lat, lng], 20); // Ajustar el mapa para centrar en la ubicación del usuario con el zoom máximo
         }
 
         // Ajustar el tamaño de los íconos cuando se cambie el nivel de zoom
@@ -296,4 +300,3 @@
     </script>
 </body>
 </html>
-

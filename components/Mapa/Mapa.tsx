@@ -100,7 +100,7 @@ const App = () => {
     <View style={{ flex: 1 }}>
       <WebView
         ref={webViewRef}
-        source={{ uri: 'http://192.168.100.5:5500/components/Mapa/mapa.html' }} // Reemplaza con tu URL local
+        source={{ uri: 'http://10.214.84.147:5500/components/Mapa/mapa.html' }} // Reemplaza con tu URL local
         onMessage={event => {
           const data = JSON.parse(event.nativeEvent.data);
           console.log('Mensaje recibido de la web:', data);
