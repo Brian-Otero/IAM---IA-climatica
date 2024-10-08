@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, Button, StyleSheet } from 'react-native';
+import { View, Text, Image, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { ImagePickerResponse } from 'react-native-image-picker';
@@ -20,15 +20,17 @@ function CameraHome({ route, navigation }: Props) {
       {photoUri ? (
         <Image
           source={{ uri: photoUri }}
-          style={{ width: 300, height: 300 }}
+          style={styles.photo}
         />
       ) : (
-        <Text>No hay foto disponible</Text>
+        <Text style={styles.noFotoText}>No hay foto disponible</Text>
       )}
-      <Button
-        title="Tomar otra Foto"
+      <TouchableOpacity
+        style={styles.button}
         onPress={() => navigation.navigate('Takepic')}
-      />
+      >
+        <Text style={styles.buttonText}>Tomar otra Foto</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -42,17 +44,29 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
   },
-  photoContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
   photo: {
-    width: 200,
-    height: 200,
+    width: '80%',
+    height: '80%',
+    borderRadius: 10,
+    borderColor: '#5C6BC0',
+    borderWidth: 2,
+    marginBottom: 20,
   },
-  info: {
-    marginTop: 10,
-    fontSize: 16,
+  noFotoText: {
+    fontSize: 18,
+    color: '#5C6BC0',  
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#5C6BC0', 
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
 export default CameraHome;
