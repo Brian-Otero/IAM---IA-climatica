@@ -6,6 +6,8 @@ import { StackScreenProps } from '@react-navigation/stack';
 type RootStackParamList = {
     Menu: undefined;
     Mapa: undefined;
+    Takepic: undefined;
+    CameraHome: undefined;
 };
 
 type Props = StackScreenProps<RootStackParamList, 'Menu'>;
@@ -46,7 +48,9 @@ const Menu: React.FC<Props> = ({ navigation }) => {
                     <Text style={styles.buttonText}>MAPA</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('Takepic')}>
                     <Image
                         source={require('./assets/camera-icon.png')}
                         style={styles.buttonImage}
