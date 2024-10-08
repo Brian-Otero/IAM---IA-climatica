@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Button, Text, StyleSheet, Alert, PermissionsAndroid, Platform } from 'react-native';
+import { View, Button, Text, StyleSheet, Alert, PermissionsAndroid, Platform, TouchableOpacity } from 'react-native';
 import { launchCamera, ImagePickerResponse } from 'react-native-image-picker';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -66,7 +66,9 @@ function Takepic({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pantalla para Tomar Foto</Text>
-      <Button title="Tomar Foto" onPress={takePicture} />
+      <TouchableOpacity style={styles.button} onPress={takePicture}>
+        <Text style={styles.buttonText}>Tomar Foto</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -76,11 +78,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#E1E3F3',
   },
   title: {
     fontSize: 20,
     marginBottom: 20,
+    color: '#3C3C3C',
+    fontWeight: 'bold',
   },
-});
+  button: {
+    backgroundColor: '#5C6BC0',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+})
 
 export default Takepic;
