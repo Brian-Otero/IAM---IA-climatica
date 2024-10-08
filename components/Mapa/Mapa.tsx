@@ -4,35 +4,39 @@ import WebView from 'react-native-webview';
 import Geolocation from 'react-native-geolocation-service';
 import PushNotification from 'react-native-push-notification';
 
-// Definir la interfaz para el estado de ubicación
 interface Location {
   latitude: number;
   longitude: number;
 }
 
-// Definir la interfaz para el estado de condiciones
-interface Condition {
-  flood: boolean;
-  rain: string;
-}
-
 const App = () => {
   const [location, setLocation] = useState<Location | null>(null);
-  const [previousCondition, setPreviousCondition] = useState<Condition>({ flood: false, rain: 'ligera' });
   const webViewRef = useRef<WebView>(null);
 
   // Crear el canal de notificación
   const createNotificationChannel = () => {
     PushNotification.createChannel(
       {
-        channelId: "weather-alert-channel", // ID único del canal
-        channelName: "Alertas de Clima", // Nombre del canal visible para el usuario
-        channelDescription: "Canal para notificaciones de clima e inundaciones", // Descripción del canal
-        importance: 4, // Importancia del canal: alta
-        vibrate: true, // Habilitar vibración
+        channelId: "weather-alert-channel",
+        channelName: "Alertas de Clima",
+        channelDescription: "Canal para notificaciones de clima e inundaciones",
+        importance: 4,
+        vibrate: true,
       },
-      (created) => console.log(`Canal de notificaciones creado: ${created ? 'nuevo' : 'existente'}`) // Log para ver si el canal fue creado
+      (created) => console.log(`Canal de notificaciones creado: ${created ? 'nuevo' : 'existente'}`)
     );
+  };
+
+  // Solicitar permiso de notificaciones (Android 13+)
+  const requestNotificationPermission = async () => {
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+      );
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('Permiso de notificaciones denegado');
+      }
+    }
   };
 
   // Solicitar permiso de ubicación en Android
@@ -51,7 +55,7 @@ const App = () => {
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           console.log('Permiso de ubicación concedido');
-          startLocationUpdates(); // Comenzar a obtener la ubicación repetidamente
+          getLocation(); // Obtener la ubicación una vez
         } else {
           console.log('Permiso de ubicación denegado');
         }
@@ -59,7 +63,7 @@ const App = () => {
         console.warn(err);
       }
     } else {
-      startLocationUpdates(); // Obtener la ubicación automáticamente en iOS
+      getLocation(); // Obtener la ubicación automáticamente en iOS
     }
   };
 
@@ -69,21 +73,19 @@ const App = () => {
       position => {
         const { latitude, longitude } = position.coords;
 
-        // Solo actualizar si la ubicación ha cambiado significativamente
-        if (!location || (location.latitude !== latitude || location.longitude !== longitude)) {
-          setLocation({ latitude, longitude });
-          console.log('Ubicación actualizada:', latitude, longitude);
+        // Actualizar la ubicación
+        setLocation({ latitude, longitude });
+        console.log('Ubicación actualizada:', latitude, longitude);
 
-          // Inyectar la ubicación en la web directamente
-          if (webViewRef.current) {
-            sendLocationToWeb(latitude, longitude);
-          }
+        // Inyectar la ubicación en la web
+        if (webViewRef.current) {
+          sendLocationToWeb(latitude, longitude);
         }
+
+        sendNotification('Clima despejado', 'Hace un agradable dia afuera, sin peligro de lluvia por el momento.');
       },
       error => {
         console.log('Error obteniendo la ubicación:', error.message);
-        // Intentar nuevamente en 5 segundos si ocurre un error
-        setTimeout(getLocation, 5000);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     );
@@ -98,45 +100,29 @@ const App = () => {
     `);
   };
 
-  // Función para iniciar el ciclo de actualizaciones de la ubicación
-  const startLocationUpdates = () => {
-    getLocation(); // Obtener la ubicación inmediatamente
-    const intervalId = setInterval(getLocation, 15000); // Actualizar cada 15 segundos
-
-    return () => clearInterval(intervalId); // Limpiar el intervalo cuando el componente se desmonte
-  };
-
   // Función para manejar mensajes recibidos de la web
   const handleWebMessage = (event: any) => {
     const data = JSON.parse(event.nativeEvent.data);
-    console.log('Mensaje recibido de la web:', data);
+    console.log('Datos recibidos desde la web:', data);
 
     const { inFloodZone, rainIntensity } = data;
 
-    // Verificar si hay un cambio en la condición
-    if (
-      inFloodZone !== previousCondition.flood || 
-      rainIntensity !== previousCondition.rain
-    ) {
-      // Si hay cambio en la condición, actualizar el estado y enviar notificación
-      setPreviousCondition({ flood: inFloodZone, rain: rainIntensity });
-
-      if (rainIntensity === "fuerte" && inFloodZone) {
-        sendNotification('¡Advertencia!', 'Se está presentando lluvia intensa y estás en una zona de inundación. Ten precaución.');
-      } else if (rainIntensity === "fuerte") {
-        sendNotification('Información', 'Está lloviendo intensamente en tu ubicación.');
-      } else {
-        sendNotification('Todo bien', 'No hay condiciones peligrosas en tu zona.');
-      }
+    if (rainIntensity === "fuerte" && inFloodZone) {
+      sendNotification('¡Advertencia!', 'Se está presentando lluvia intensa y estás en una zona de inundación. Ten precaución.');
+    } else if (rainIntensity === "fuerte") {
+      sendNotification('Información', 'Está lloviendo intensamente en tu ubicación.');
+    } else if (inFloodZone) {
+      sendNotification('Atención', 'Estás en una zona de inundación.');
     } else {
-      console.log('Condiciones iguales, no se envía notificación.');
+      sendNotification('Todo bien', 'No hay condiciones peligrosas en tu zona.');
     }
   };
 
   // Función para enviar notificación al dispositivo
   const sendNotification = (title: string, message: string) => {
+    console.log('Enviando notificación:', title, message);
     PushNotification.localNotification({
-      channelId: "weather-alert-channel", // Usar el canal creado
+      channelId: "weather-alert-channel",
       title,
       message,
       playSound: true,
@@ -145,21 +131,21 @@ const App = () => {
     });
   };
 
-  // Solicitar permiso de ubicación cuando la app se inicia
+  // Solicitar permisos y configurar notificaciones al iniciar
   useEffect(() => {
-    createNotificationChannel(); // Crear canal de notificación
+    createNotificationChannel();
+    requestNotificationPermission();
     requestLocationPermission();
-
-    // Limpiar el intervalo cuando el componente se desmonte
-    return startLocationUpdates();
   }, []);
 
   return (
     <View style={{ flex: 1 }}>
       <WebView
         ref={webViewRef}
-        source={{ uri: 'http://10.214.84.147:5500/components/Mapa/mapa.html' }} // Reemplaza con tu URL local
+        source={{ uri: 'http://192.168.100.5:5500/components/Mapa/backend/Mapa html/mapa.html' }}
         onMessage={handleWebMessage}
+        originWhitelist={['*']}
+        javaScriptEnabled={true}
         style={{ flex: 1 }}
       />
     </View>

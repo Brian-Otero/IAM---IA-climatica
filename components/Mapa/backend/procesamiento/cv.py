@@ -5,11 +5,11 @@ import geopandas as gpd
 from shapely.geometry import Polygon
 import os
 
-# Obtener el directorio base del proyecto
+# Obtener el directorio base del proyecto (la carpeta "components")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Directorio de salida de los archivos KML en backend/Mapa html/kmls
-kml_directory = os.path.join(BASE_DIR, "backend", "Mapa html", "kmls")
+# Directorio de salida de los archivos KML en "components/Mapa/backend/Mapa html/kmls"
+kml_directory = os.path.join(BASE_DIR,  "Mapa html", "kmls")
 
 # Asegurarse de que el directorio kmls existe
 os.makedirs(kml_directory, exist_ok=True)
@@ -44,8 +44,7 @@ def process_image(image_path):
             east = -101.9462411978663
             west = -104.8254262826025
 
-            # Mapa de colores a intensidades de lluvia basado en la guía proporcionada (sin granizo)
-            # Ajustamos los rangos de saturación y brillo para tomar en cuenta colores más fuertes y centrados.
+            # Mapa de colores a intensidades de lluvia basado en la guía proporcionada
             color_ranges = {
                 'débil': ([35, 100, 100], [85, 255, 255]),  # Verde claro
                 'ligera': ([35, 150, 150], [85, 255, 255]),  # Verde oscuro

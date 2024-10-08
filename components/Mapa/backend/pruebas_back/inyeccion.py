@@ -5,7 +5,7 @@ import requests
 url = "http://148.202.152.59:8002/upload/"
 
 # Ruta de la carpeta con los archivos KML
-kml_folder = "/ruta/a/tu/carpeta/kmls"
+kml_folder = "./kml_prueba"
 
 # Iterar sobre todos los archivos KML en la carpeta
 for filename in os.listdir(kml_folder):
