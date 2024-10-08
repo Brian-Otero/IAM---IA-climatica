@@ -39,14 +39,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#0f1124',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     marginBottom: 20,
+    color: '#dbddf0',
+    fontWeight: 'bold',    
   },
   photo: {
     width: '80%',
-    height: '80%',
+    height: '60%',
     borderRadius: 10,
     borderColor: '#5C6BC0',
     borderWidth: 2,
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#5C6BC0', 
+    backgroundColor: '#3366cc', 
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,
