@@ -142,7 +142,7 @@ const App = () => {
     <View style={{ flex: 1 }}>
       <WebView
         ref={webViewRef}
-        source={{ uri: 'http://192.168.100.5:5500/components/Mapa/backend/Mapa html/mapa.html' }}
+        source={{ uri: 'http://148.202.152.59:5001' }}
         onMessage={handleWebMessage}
         originWhitelist={['*']}
         javaScriptEnabled={true}

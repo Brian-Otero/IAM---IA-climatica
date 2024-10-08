@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 import shutil
 import os
@@ -89,7 +90,7 @@ def procesar_imagen(file_path):
     print(f"Objetos detectados: {objects_detected}")
 
     # Continuar con el procesamiento normal (KML, etc.)
-    result = subprocess.run(["python3", CV_SCRIPT_PATH, file_path], capture_output=True, text=True)
+    result = subprocess.run(["python", CV_SCRIPT_PATH, file_path], capture_output=True, text=True)
 
     if result.returncode == 0:
         print(f"Procesamiento exitoso para: {file_path}")
@@ -176,11 +177,11 @@ async def get_kml_by_date(date: str):
 
 def iniciar_servidor_flask():
     try:
-        FLASK_SCRIPT_PATH = os.path.join(BASE_DIR, "backend", "Mapa html", "servidor.py")
+        FLASK_SCRIPT_PATH = os.path.join(BASE_DIR, "backend", 'Mapa html', "servidor.py")
 
         while True:
             print("Iniciando servidor Flask...")
-            flask_process = subprocess.Popen(["python", FLASK_SCRIPT_PATH])
+            flask_process = subprocess.Popen(["python3", FLASK_SCRIPT_PATH])
             flask_process.wait()
             print("Servidor Flask se ha detenido. Reiniciando...")
             time.sleep(2)
