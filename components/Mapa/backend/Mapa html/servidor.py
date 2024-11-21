@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Flask, send_from_directory
 import os
 
@@ -28,4 +29,4 @@ def serve_kmls(filename):
 
 # Iniciar el servidor Flask
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

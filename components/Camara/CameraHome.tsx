@@ -36,7 +36,7 @@ function CameraHome({ route, navigation }: Props) {
       });
 
       // Enviar imagen al servidor FastAPI que ejecuta YOLOv8
-      const response = await fetch('http://127.0.0.1:8001/predict/', {
+      const response = await fetch('http://148.202.152.59:8003/predict/', {
         method: 'POST',
         body: formData,
         headers: {
