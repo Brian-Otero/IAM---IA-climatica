@@ -31,5 +31,5 @@ def detect_rain(image_path):
     plt.show()
 
 # Ruta de la imagen para analizar
-image_path = "components/Mapa/backend/imagenes.jpg"  # Cambia esto por la ruta de tu imagen
+image_path = "components/Mapa/backend/foto.jpg"  # Cambia esto por la ruta de tu imagen
 detect_rain(image_path)

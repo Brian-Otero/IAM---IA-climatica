@@ -16,29 +16,10 @@
             width: 100%;
             height: 100vh;
         }
-        #toggle-kml {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            font-size: 55px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s ease;
-        }
-        #toggle-kml:hover {
-            background-color: #45a049;
-        }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    <button id="toggle-kml">Mostrar/Ocultar Zona de Inundaciones</button>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
@@ -55,7 +36,9 @@
         var zoomThreshold = 17; 
         var minIconSize = 350;
         var maxIconSize = 450;
-        var kmlLayerInundaciones = null;
+        var kmlLayerInundaciones = null; // Referencia a la capa KML de inundaciones
+        var polygons = []; // Array para almacenar los polígonos de inundaciones
+        var rainPolygons = []; // Array para almacenar los polígonos de lluvias
 
         // Función para agregar un ícono de lluvia
         function addRainIcon(coord, intensity) {
@@ -130,7 +113,37 @@
             checkIfInZone(lat, lng);    
         };
 
-        // Notificar la app cuando el marcador de usuario se arrastra
+        // Función para inicializar la capa KML de inundaciones
+        function initializeKmlLayer() {
+            if (!kmlLayerInundaciones) {
+                kmlLayerInundaciones = omnivore.kml('./kmls/inundaciones.kml').on('ready', function() {
+                    this.eachLayer(function(layer) {
+                        polygons.push(layer);
+                    });
+                });
+                if (kmlLayerVisible) {
+                    map.addLayer(kmlLayerInundaciones);
+                }
+            }
+        }
+
+        // Función para activar/desactivar la capa KML desde la app móvil
+        window.toggleKmlLayer = function(isActive) {
+            if (isActive) {
+                if (!kmlLayerInundaciones) {
+                    initializeKmlLayer();
+                } else {
+                    map.addLayer(kmlLayerInundaciones);
+                }
+            } else {
+                if (kmlLayerInundaciones) {
+                    map.removeLayer(kmlLayerInundaciones);
+                    polygons = []; // Limpiar los polígonos al remover la capa
+                }
+            }
+        };
+
+        // Notificar a la app cuando el marcador de usuario se arrastra
         function updateLocationOnDrag(lat, lng) {
             createUserMarker(lat, lng); // Actualizar el marcador
             checkIfInZone(lat, lng);    // Verificar las condiciones para la nueva ubicación
@@ -142,39 +155,54 @@
         function checkIfInZone(lat, lng) {
             var point = L.latLng(lat, lng);
             var inFloodZone = false;
+            var inRainZone = false;
+            var rainIntensity = null;
 
+            // Verificar si está en zona de inundación
             polygons.forEach(function(polygon) {
                 if (polygon.getBounds().contains(point)) {
                     inFloodZone = true;
                 }
             });
 
-            window.ReactNativeWebView.postMessage(JSON.stringify({ inFloodZone }));
-        }
-
-        document.getElementById("toggle-kml").addEventListener('click', function() {
-            if (kmlLayerInundaciones) {
-                if (map.hasLayer(kmlLayerInundaciones)) {
-                    map.removeLayer(kmlLayerInundaciones);
-                } else {
-                    map.addLayer(kmlLayerInundaciones);
+            // Verificar si está en zona de lluvia
+            rainPolygons.forEach(function(polygon) {
+                if (polygon.getBounds().contains(point)) {
+                    inRainZone = true;
+                    // Obtener la intensidad de la lluvia si está disponible
+                    if (polygon.feature && polygon.feature.properties && polygon.feature.properties.intensity) {
+                        rainIntensity = polygon.feature.properties.intensity;
+                    } else {
+                        rainIntensity = "fuerte"; // Valor por defecto
+                    }
                 }
-            } else {
-                kmlLayerInundaciones = omnivore.kml('./kmls/inundaciones.kml').addTo(map);
-            }
-        });
+            });
+
+            // Enviar la información a la app móvil
+            window.ReactNativeWebView.postMessage(JSON.stringify({ inFloodZone, inRainZone, rainIntensity }));
+        }
 
         map.on('zoomend', function() {
             resizeRainIcons();
         });
 
+        // Cargar y procesar el KML de lluvias
         omnivore.kml('./kmls/lluvias_areas.kml').on('ready', function() {
             this.eachLayer(function(layer) {
                 var center = layer.getBounds().getCenter();
-                addRainIcon(center, "fuerte");
+                addRainIcon(center, "fuerte"); // Asignar intensidad "fuerte" por defecto o extraerla de las propiedades
+                rainPolygons.push(layer);
             });
             resizeRainIcons();
         });
+
+        // Asegurarse de que kmlLayerVisible esté definido
+        if (typeof kmlLayerVisible === 'undefined') {
+            var kmlLayerVisible = true; // Valor por defecto si no está definido
+        }
+
+        // Inicializar el estado inicial de KML
+        initializeKmlLayer();
     </script>
 </body>
 </html>

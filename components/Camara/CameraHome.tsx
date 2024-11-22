@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { ImagePickerResponse } from 'react-native-image-picker';
+import WebView from 'react-native-webview';
+import Geolocation from 'react-native-geolocation-service';
 
 type RootStackParamList = {
   Takepic: undefined;
@@ -18,63 +28,142 @@ function CameraHome({ route, navigation }: Props) {
   const [photo, setPhoto] = useState(route.params?.photo);
   const [loading, setLoading] = useState(false);
   const [detections, setDetections] = useState<string | null>(null);
+  const [mapData, setMapData] = useState<{ inFloodZone: boolean; rainIntensity: string | null }>({
+    inFloodZone: false,
+    rainIntensity: null,
+  });
   const photoUri = photo?.assets?.[0]?.uri;
+
+  const webViewRef = React.useRef<WebView>(null);
+
+  const handleWebMessage = (event: any) => {
+    const data = JSON.parse(event.nativeEvent.data);
+    console.log('Datos recibidos desde la web:', data);
+
+    setMapData({
+      inFloodZone: data.inFloodZone,
+      rainIntensity: data.rainIntensity,
+    });
+  };
+
+  const fetchMapData = async (): Promise<void> => {
+    return new Promise((resolve) => {
+      // Obtener ubicación actual
+      Geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('Ubicación actualizada:', latitude, longitude);
+
+          // Enviar la ubicación a la WebView para obtener los datos
+          webViewRef.current?.injectJavaScript(`
+            if (window.updateUserLocation) {
+              window.updateUserLocation(${latitude}, ${longitude});
+            }
+          `);
+
+          resolve();
+        },
+        (error) => {
+          console.log('Error obteniendo la ubicación:', error.message);
+          resolve();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+    });
+  };
+
+  const sendImageToApiWithRetries = async (
+    photoUri: string,
+    maxRetries: number = 5
+  ): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: photoUri,
+      name: 'photo.jpg',
+      type: 'image/jpeg',
+    });
+  
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Intento ${attempt} de enviar la imagen a la API`);
+        const response = await fetch('http://192.168.100.5:8001/predict/', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+  
+        if (response.ok) {
+          return await response.json();
+        } else {
+          throw new Error('Error en la respuesta del servidor');
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(`Error en el intento ${attempt}:`, error.message);
+        } else {
+          console.error(`Error desconocido en el intento ${attempt}:`, error);
+        }
+  
+        if (attempt === maxRetries) {
+          throw new Error('Fallo al enviar la imagen después de múltiples intentos');
+        }
+      }
+    }
+  };
+  
 
   const sendImageToApi = async (photoUri: string) => {
     try {
       if (!photoUri) {
-        throw new Error("No hay foto disponible para procesar");
+        throw new Error('No hay foto disponible para procesar');
       }
 
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append('file', {
-        uri: photoUri,
-        name: 'photo.jpg',
-        type: 'image/jpeg',
-      });
+      // Abrir mapa en segundo plano para obtener los datos
+      await fetchMapData();
 
-      // Enviar imagen al servidor FastAPI que ejecuta YOLOv8
-      const response = await fetch('http://148.202.152.59:8003/predict/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Enviar la imagen con reintentos
+      const data = await sendImageToApiWithRetries(photoUri);
 
-      if (!response.ok) {
-        throw new Error("Error en la respuesta del servidor");
+      const iaDetectedRain = data.objects.some((obj: { label: string }) =>
+        obj.label.toLowerCase().includes('rain')
+      );
+
+      // Comparar datos de la IA y del radar del IAM
+      let resultMessage = '';
+      if (iaDetectedRain) {
+        if (mapData.rainIntensity) {
+          resultMessage =
+            `La IA detectó lluvia en la foto. ` +
+            `El radar del IAM también indica lluvia con intensidad: ${mapData.rainIntensity}.`;
+        } else {
+          resultMessage =
+            `La IA detectó lluvia en la foto, ` +
+            `pero el radar del IAM no indica lluvia. Esto será reportado al instituto para su análisis.`;
+        }
+      } else {
+        if (mapData.rainIntensity) {
+          resultMessage =
+            `La IA no detectó lluvia en la foto, ` +
+            `pero el radar del IAM indica lluvia con intensidad: ${mapData.rainIntensity}. Esto será reportado al instituto para su análisis.`;
+        } else {
+          resultMessage = 'Tanto la IA como el radar del IAM coinciden en que no hay lluvia.';
+        }
       }
 
-      const data = await response.json();
-      const detectionText = data.objects.map(
-        (obj: { label: string; confidence: number }) =>
-          `${obj.label} (${(obj.confidence * 100).toFixed(2)}%)`
-      ).join(', ');
-
-      setDetections(detectionText);
+      setDetections(resultMessage);
 
       // Mostrar las detecciones en un popup
-      Alert.alert(
-        "Detecciones realizadas",
-        detectionText || 'No se detectaron objetos',
-        [{ text: "OK" }]
-      );
+      Alert.alert('Resultado de la Comparativa', resultMessage, [{ text: 'OK' }]);
     } catch (error) {
-      // Comprobar que error es de tipo Error
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-
       console.error('Error al enviar la imagen a la API:', errorMessage);
 
       // Mostrar popup de error genérico
-      Alert.alert(
-        "Error",
-        errorMessage || "Error al procesar la imagen",
-        [{ text: "OK" }]
-      );
-
+      Alert.alert('Error', errorMessage || 'Error al procesar la imagen', [{ text: 'OK' }]);
       setDetections('Error al procesar la imagen');
     } finally {
       setLoading(false);
@@ -84,6 +173,14 @@ function CameraHome({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pantalla de Cámara</Text>
+      <WebView
+        ref={webViewRef}
+        source={{ uri: 'http://192.168.100.5:5001' }}
+        style={{ display: 'none' }} // Ocultar la WebView
+        originWhitelist={['*']}
+        javaScriptEnabled={true}
+        onMessage={handleWebMessage}
+      />
       {photoUri ? (
         <>
           <Image source={{ uri: photoUri }} style={styles.photo} />
